@@ -6,6 +6,9 @@
 #include "proc.h"
 #include "defs.h"
 
+// include pstat
+#include "pstat.h"
+
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
@@ -322,6 +325,15 @@ fork(void)
   np->state = RUNNABLE;
   release(&np->lock);
 
+  // INÍCIO DA IMPLEMENTAÇÃO
+  
+  // np->tickets = p->tickets;  // np é o processo filho e p é o processo pai
+  // acquire(&ptable.ticketslock);
+  // total_tickets += np->tickets;
+  // release(&ptable.ticketslock);
+
+  // FIM DA IMPLEMENTAÇÃO
+
   return pid;
 }
 
@@ -379,6 +391,10 @@ exit(int status)
   p->state = ZOMBIE;
 
   release(&wait_lock);
+
+  // acquire(&ptable.ticketslock);
+  // total_tickets -= p->tickets;
+  // release(&ptable.ticketslock);
 
   // Jump into the scheduler, never to return.
   sched();
@@ -441,17 +457,20 @@ wait(uint64 addr)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
+
+// TODO: mudar a função para implementar o algoritmo de escalonamento baseado em loteria
 void
 scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
+  struct pstat *stat;
   
   c->proc = 0;
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-
+    printf("ESCALONADOR");
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {

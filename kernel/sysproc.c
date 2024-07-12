@@ -6,6 +6,26 @@
 #include "spinlock.h"
 #include "proc.h"
 
+
+// INÍCIO DA IMPLEMENTAÇÃO
+
+// TODO: implementar novas chamadas de sistema  (settickets and getpinfo)
+uint64
+sys_settickets(void)
+{
+  //define o número de tickets para um processo
+  printf("FUNÇÃO sys_settickets CHAMADA");
+}
+
+uint64
+sys_getpinfo(void)
+{
+  // fornece informações sobre todos os processos atualmente em execução (estado de uso, número de tickets e PID)
+  printf("FUNÇÃO sys_getpinfo CHAMADA");
+}
+
+// FIM DA IMPLEMENTAÇÃO
+
 uint64
 sys_exit(void)
 {
