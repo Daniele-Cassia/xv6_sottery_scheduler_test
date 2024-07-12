@@ -1,0 +1,20 @@
+# Trabalho Prático 1 - Sistemas Operacionais
+Nesse trabalho preciso implementar uma chamada de sistema (syscall) chamada `getcnt` no sistema operacional xv6. A syscall terá a finalidade de permitir que o kernel do xv6 mantenha um registro do número de vezes que cada syscall foi chamada.
+
+Plano de Execução:
+
+1. **Configuração do Ambiente:**
+   - Fazer fork do repositório do xv6 RISC-V[https://github.com/mit-pdos/xv6-riscv.git]
+   - Instalar as dependências[https://pdos.csail.mit.edu/6.1810/2023/tools.html]
+
+2. **Implementação da Syscall `getcnt`:**
+   - Editar os arquivos relevantes (`syscall.c`, `sysfile.c`, `proc.h`) para adicionar a implementação da syscall `getcnt`.
+   - A syscall `getcnt` deve receber um parâmetro inteiro e retornar o número de vezes que a syscall correspondente a esse número foi chamada.
+
+3. **Programa de Espaço de Usuário:**
+   - Implementar um programa de espaço de usuário chamado "getcnt" que chama a syscall `getcnt` com um número de syscall como argumento.
+   - Modificar o arquivo `Makefile` para incluir o getcnt no `UPROGS` para que ele seja compilado junto com o restante do xv6.
+
+4. **Testes e Documentação:**
+   - Testar a syscall implementada com diferentes números de syscall.
+   - Documentar todas as modificações feitas no código do xv6, incluindo um registro das mudanças realizadas para implementar a syscall `getcnt`, a estrutura de dados utilizada para manter o registro do número de chamadas de cada syscall, como essa estrutura foi atualizada e outras partes relevantes do código que foram modificadas.
