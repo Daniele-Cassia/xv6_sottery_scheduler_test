@@ -1,20 +1,28 @@
-# Trabalho Prático 1 - Sistemas Operacionais
-Nesse trabalho preciso implementar uma chamada de sistema (syscall) chamada `getcnt` no sistema operacional xv6. A syscall terá a finalidade de permitir que o kernel do xv6 mantenha um registro do número de vezes que cada syscall foi chamada.
+# Implementação do Lottery Scheduler no xv6-riscv
 
-Plano de Execução:
+Este projeto implementa o algoritmo de escalonamento baseado em loteria (Lottery Scheduler) no sistema operacional xv6-riscv, conforme descrito no livro *Operating Systems: Three Easy Pieces* (OSTEP).
 
-1. **Configuração do Ambiente:**
-   - Fazer fork do repositório do xv6 RISC-V[https://github.com/mit-pdos/xv6-riscv.git]
-   - Instalar as dependências[https://pdos.csail.mit.edu/6.1810/2023/tools.html]
+## Descrição
 
-2. **Implementação da Syscall `getcnt`:**
-   - Editar os arquivos relevantes (`syscall.c`, `sysfile.c`, `proc.h`) para adicionar a implementação da syscall `getcnt`.
-   - A syscall `getcnt` deve receber um parâmetro inteiro e retornar o número de vezes que a syscall correspondente a esse número foi chamada.
+O Lottery Scheduler é um algoritmo de escalonamento probabilístico que atribui tickets a cada processo. A probabilidade de um processo ser escolhido para execução é proporcional ao número de tickets que possui.
 
-3. **Programa de Espaço de Usuário:**
-   - Implementar um programa de espaço de usuário chamado "getcnt" que chama a syscall `getcnt` com um número de syscall como argumento.
-   - Modificar o arquivo `Makefile` para incluir o getcnt no `UPROGS` para que ele seja compilado junto com o restante do xv6.
+## Funcionalidades Implementadas
 
-4. **Testes e Documentação:**
-   - Testar a syscall implementada com diferentes números de syscall.
-   - Documentar todas as modificações feitas no código do xv6, incluindo um registro das mudanças realizadas para implementar a syscall `getcnt`, a estrutura de dados utilizada para manter o registro do número de chamadas de cada syscall, como essa estrutura foi atualizada e outras partes relevantes do código que foram modificadas.
+1. **Alteração do Scheduler**: Modificação do escalonador para usar o algoritmo de loteria.
+2. **Manutenção do Número Total de Tickets**: Variável global para manter o número total de tickets distribuídos entre processos executáveis.
+3. **Exclusão de Processos Dormindo**: Processos em estado de sono (SLEEPING) não competem pelo tempo da CPU.
+4. **Proteção com Spinlock**: Acesso concorrente à variável total de tickets protegido por um spinlock.
+5. **Campo de Tickets para Cada Processo**: Cada processo possui um campo que armazena seu número de tickets.
+6. **Contabilização de Tickets no Fork**: Processos filhos herdam os tickets dos processos pais.
+7. **Herdar Tickets no Exec**: Processos mantêm seus tickets ao chamar `exec`.
+8. **Recuperação de Tickets no Exit**: Recuperação de tickets quando um processo chama `exit`.
+9. **Geração de Número Aleatório no Scheduler**: Modificação do scheduler para gerar um número aleatório e escolher o processo apropriado.
+10. **Chamadas de Sistema (settickets e getpinfo)**: Implementação das chamadas de sistema para definir e obter informações sobre os tickets.
+
+## Estrutura de Arquivos
+
+- `proc.h`: Definições de estruturas e protótipos de funções.
+- `proc.c`: Implementação das funções do escalonador e manipulação de processos.
+- `sysproc.c`: Implementação das novas chamadas de sistema `settickets` e `getpinfo`.
+- `pstat.h`: Definição da estrutura `pstat` para armazenar informações de processos.
+
