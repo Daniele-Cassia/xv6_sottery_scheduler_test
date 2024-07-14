@@ -77,7 +77,7 @@ procinit(void)
   initlock(&tickets_lock, "tickets_lock");
   for(p = proc; p < &proc[NPROC]; p++) {
     initlock(&p->lock, "proc");
-    p->state = UNUSED;
+    // p->state = UNUSED;
     p->kstack = KSTACK((int) (p - proc));
     p->tickets = 0;
   }
@@ -149,6 +149,7 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
+  p->scheduled = 0;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -277,6 +278,8 @@ userinit(void)
   p->cwd = namei("/");
 
   p->state = RUNNABLE;
+
+  ticketsadd(p, 1);
 
   release(&p->lock);
 }
@@ -633,7 +636,7 @@ wakeup(void *chan)
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
-        ticketsadd(0, -p->tickets); //adicionado
+        ticketsadd(0, p->tickets); //adicionado
       }
       release(&p->lock);
     }
@@ -655,7 +658,7 @@ kill(int pid)
       if(p->state == SLEEPING){
         // Wake process from sleep().
         p->state = RUNNABLE;
-        ticketsadd(0, -p->tickets); //adicionado
+        ticketsadd(0, p->tickets); //adicionado
       }
       release(&p->lock);
       return 0;
