@@ -8,6 +8,8 @@
 
 // include pstat
 #include "pstat.h"
+#include "rand.h"
+
 
 struct cpu cpus[NCPU];
 
@@ -496,7 +498,7 @@ scheduler(void)
 
     counter = 0;
     acquire(&tickets_lock);
-    winner = teste() % totaltickets;
+    winner = rand() % totaltickets;
     release(&tickets_lock);
 
     for(p = proc; p < &proc[NPROC]; p++) {
