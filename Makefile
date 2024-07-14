@@ -136,7 +136,6 @@ UPROGS=\
 	$U/_zombie\
 	$U/_getcnt\
 	$U/_ps\
-	$U/_zz\
 
 fs.img: mkfs/mkfs README.md $(UPROGS)
 	mkfs/mkfs fs.img README.md $(UPROGS)
