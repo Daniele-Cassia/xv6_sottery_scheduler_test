@@ -10,10 +10,10 @@ ps(void)
   if(getpinfo(&pinfo) < 0){
     return -1;
   }
-  printf("PID    Tickets    Ticks\n");
+  printf("PID    TICKETS    TICKS\n");
   for(i = 0; i < NPROC; i++){
     if(pinfo.inuse[i]){
-      printf("%d %d %d\n", pinfo.pid[i], pinfo.tickets[i], pinfo.ticks[i]);
+      printf("%d\t%d\t%d\n", pinfo.pid[i], pinfo.tickets[i], pinfo.ticks[i]);
     }
   }
   return 0;
