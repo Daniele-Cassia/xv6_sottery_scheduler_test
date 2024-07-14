@@ -40,7 +40,7 @@ struct spinlock pinfo_lock;
 static void
 ticketsadd(struct proc *p, int num_tickets)
 {
-  if (p != NULL) {
+  if (p != 0) {
     p->tickets = p->tickets + num_tickets;
   }
   acquire(&tickets_lock);
@@ -77,7 +77,7 @@ procinit(void)
   initlock(&tickets_lock, "tickets_lock");
   for(p = proc; p < &proc[NPROC]; p++) {
     initlock(&p->lock, "proc");
-    // p->state = UNUSED;
+    p->state = UNUSED;
     p->kstack = KSTACK((int) (p - proc));
     p->tickets = 0;
   }
