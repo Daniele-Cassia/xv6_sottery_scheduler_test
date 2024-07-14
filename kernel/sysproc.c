@@ -7,25 +7,6 @@
 #include "proc.h"
 
 
-// INÍCIO DA IMPLEMENTAÇÃO
-
-// TODO: implementar novas chamadas de sistema  (settickets and getpinfo)
-uint64
-sys_settickets(void)
-{
-  //define o número de tickets para um processo
-  printf("FUNÇÃO sys_settickets CHAMADA");
-}
-
-uint64
-sys_getpinfo(void)
-{
-  // fornece informações sobre todos os processos atualmente em execução (estado de uso, número de tickets e PID)
-  printf("FUNÇÃO sys_getpinfo CHAMADA");
-}
-
-// FIM DA IMPLEMENTAÇÃO
-
 uint64
 sys_exit(void)
 {
@@ -109,3 +90,28 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+
+// INÍCIO DA IMPLEMENTAÇÃO
+// TODO: implementar novas chamadas de sistema  (settickets and getpinfo)
+uint64
+sys_settickets(void)
+{
+  int number;
+  argint(0, &number);
+  if(&number< 0)
+    return -1;
+  return settickets(number);
+}
+
+uint64
+sys_getpinfo(void)
+{
+  uint64 p;
+  argaddr(0, &p);
+  if(&p < 0)
+    return -1;
+  return getpinfo(p);
+}
+
+// FIM DA IMPLEMENTAÇÃO

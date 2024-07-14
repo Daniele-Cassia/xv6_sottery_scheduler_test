@@ -18,6 +18,12 @@ struct proc *initproc;
 int nextpid = 1;
 struct spinlock pid_lock;
 
+// variavel global para guarda a quantidade de tickets
+volatile int totaltickets = 0;
+struct spinlock tickets_lock;
+
+// struct spinlock ticket_lock;
+
 extern void forkret(void);
 static void freeproc(struct proc *p);
 
@@ -28,6 +34,19 @@ extern char trampoline[]; // trampoline.S
 // memory model when using p->parent.
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
+
+struct spinlock pinfo_lock;
+
+static void
+ticketsadd(struct proc *p, int tickets)
+{
+  if (p) {
+    p->tickets += tickets;
+  }
+  acquire(&tickets_lock);
+  totaltickets += tickets;
+  release(&tickets_lock);
+}
 
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
@@ -54,10 +73,13 @@ procinit(void)
   
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
+  initlock(&pinfo_lock, "pinfo_lock");
+  initlock(&tickets_lock, "tickets_lock");
   for(p = proc; p < &proc[NPROC]; p++) {
-      initlock(&p->lock, "proc");
-      p->state = UNUSED;
-      p->kstack = KSTACK((int) (p - proc));
+    initlock(&p->lock, "proc");
+    p->state = UNUSED;
+    p->kstack = KSTACK((int) (p - proc));
+    p->tickets = 0;
   }
 }
 
@@ -172,6 +194,8 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  p->scheduled = 0;               // adicionado
+  ticketsadd(p, -p->tickets);     // adicionado
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -323,16 +347,9 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
+  //adicionado
+  ticketsadd(np, p->tickets);
   release(&np->lock);
-
-  // INÍCIO DA IMPLEMENTAÇÃO
-  
-  // np->tickets = p->tickets;  // np é o processo filho e p é o processo pai
-  // acquire(&ptable.ticketslock);
-  // total_tickets += np->tickets;
-  // release(&ptable.ticketslock);
-
-  // FIM DA IMPLEMENTAÇÃO
 
   return pid;
 }
@@ -391,10 +408,6 @@ exit(int status)
   p->state = ZOMBIE;
 
   release(&wait_lock);
-
-  // acquire(&ptable.ticketslock);
-  // total_tickets -= p->tickets;
-  // release(&ptable.ticketslock);
 
   // Jump into the scheduler, never to return.
   sched();
@@ -458,37 +471,64 @@ wait(uint64 addr)
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
 
+
+int teste(){
+  return 11;
+}
+
+
 // TODO: mudar a função para implementar o algoritmo de escalonamento baseado em loteria
 void
 scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
-  struct pstat *stat;
-  
+  int counter;
+  int winner;
+
   c->proc = 0;
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-    printf("ESCALONADOR");
+
+    counter = 0;
+    acquire(&tickets_lock);
+    winner = teste() % totaltickets;
+    release(&tickets_lock);
+
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
+        counter += p->tickets;
+        if(counter > winner)
+          break;
       }
       release(&p->lock);
     }
+
+    if(p >= &proc[NPROC]) {
+      continue;
+    }
+
+    // Switch to chosen process.  It is the process's job
+    // to release its lock and then reacquire it
+    // before jumping back to us.
+    p->state = RUNNING;
+    c->proc = p;
+
+    p->scheduled++;
+    swtch(&c->context, &p->context);
+
+    // Process is done running for now.
+    // It should have changed its p->state before coming back.
+    c->proc = 0;
+
+    release(&p->lock);
   }
 }
+
+
+
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores
@@ -569,6 +609,7 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
+  ticketsadd(0, -p->tickets); //adicionado
 
   sched();
 
@@ -592,6 +633,7 @@ wakeup(void *chan)
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
+        ticketsadd(0, -p->tickets); //adicionado
       }
       release(&p->lock);
     }
@@ -613,6 +655,7 @@ kill(int pid)
       if(p->state == SLEEPING){
         // Wake process from sleep().
         p->state = RUNNABLE;
+        ticketsadd(0, -p->tickets); //adicionado
       }
       release(&p->lock);
       return 0;
@@ -702,3 +745,49 @@ procdump(void)
 }
 
 uint64 syscalls_count[23] = {0}; // inicializa array
+
+
+int
+settickets(int number)
+{
+  struct proc *p = myproc();
+
+  if(number <= 0)
+    return -1;
+
+  acquire(&p->lock);
+  ticketsadd(p, number - p->tickets);
+  release(&p->lock);
+  return 0;
+}
+
+// Return process info. addr is a pointer to struct pinfo
+// Return -1 if addr is invalid
+int
+getpinfo(uint64 addr)
+{
+  struct proc *np;
+  struct proc *p = myproc();
+  struct pstat pinfo;
+  int i;
+  int ret;
+
+  if(addr == 0)
+    return -1;
+
+  acquire(&pinfo_lock);
+
+  for(i = 0; i < NPROC; i++){
+    np = &proc[i];
+    acquire(&np->lock);
+    pinfo.inuse[i] = np->state != UNUSED;
+    pinfo.tickets[i] = np->tickets;
+    pinfo.pid[i] = np->pid;
+    pinfo.ticks[i] = np->scheduled;
+    release(&np->lock);
+  }
+
+  ret = copyout(p->pagetable, addr, (char *)&pinfo, sizeof(pinfo));
+  release(&pinfo_lock);
+  return ret;
+}

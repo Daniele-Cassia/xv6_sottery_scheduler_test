@@ -21,3 +21,7 @@
 #define SYS_mkdir  20
 #define SYS_close  21
 #define SYS_getcnt  22 // add syscall
+#define SYS_settickets  23 // add syscall
+#define SYS_getpinfo  24 // add syscall
+
+

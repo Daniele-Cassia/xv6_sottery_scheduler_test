@@ -102,6 +102,8 @@ extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
 extern uint64 sys_getcnt(void); // add syscall
+extern uint64 sys_settickets(void); // add syscall
+extern uint64 sys_getpinfo(void); // add syscall
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -128,6 +130,8 @@ static uint64 (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_getcnt]   sys_getcnt,  // adiciona uma chamada de sistema para getcnt
+[SYS_settickets]   sys_settickets,  // adiciona uma chamada de sistema para settickets
+[SYS_getpinfo]   sys_getpinfo,  // adiciona uma chamada de sistema para getpinfo
 };
 
 void
