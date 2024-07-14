@@ -38,13 +38,13 @@ struct spinlock wait_lock;
 struct spinlock pinfo_lock;
 
 static void
-ticketsadd(struct proc *p, int tickets)
+ticketsadd(struct proc *p, int num_tickets)
 {
-  if (p) {
-    p->tickets += tickets;
+  if (p != NULL) {
+    p->tickets = p->tickets + num_tickets;
   }
   acquire(&tickets_lock);
-  totaltickets += tickets;
+  totaltickets += num_tickets;
   release(&tickets_lock);
 }
 
@@ -770,17 +770,13 @@ int
 getpinfo(uint64 addr)
 {
   struct proc *np;
-  struct proc *p = myproc();
   struct pstat pinfo;
-  int i;
-  int ret;
 
-  if(addr == 0)
-    return -1;
+  if(addr == 0) return -1;
 
   acquire(&pinfo_lock);
 
-  for(i = 0; i < NPROC; i++){
+  for(int i = 0; i < NPROC; i++){
     np = &proc[i];
     acquire(&np->lock);
     pinfo.inuse[i] = np->state != UNUSED;
@@ -790,7 +786,8 @@ getpinfo(uint64 addr)
     release(&np->lock);
   }
 
-  ret = copyout(p->pagetable, addr, (char *)&pinfo, sizeof(pinfo));
+  struct proc *p = myproc();
+  int ret = copyout(p->pagetable, addr, (char *)&pinfo, sizeof(pinfo));
   release(&pinfo_lock);
   return ret;
 }
